@@ -2,9 +2,10 @@ package controllers
 
 import (
 	"ApiMessenger/models"
-	"time"
-
 	"ApiMessenger/utils"
+	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -44,6 +45,26 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	var userInfo models.CreatedUser
+
+	result := models.DB.Where("email = ?", user.Email).First(&user)
+	if result.Error != nil {
+		fmt.Println(result.Error)
+		return
+	}
+
+	jsonData, err := json.Marshal(user)
+	if err != nil {
+		fmt.Println("JSON marshaling error:", err)
+	}
+
+	bytes := []byte(jsonData)
+	decodeError := json.Unmarshal(bytes, &userInfo)
+	if decodeError != nil {
+		fmt.Println("JSON decoding error:", decodeError)
+		return
+	}
+
 	expirationTime := time.Now().Add(5 * time.Minute)
 
 	claims := &models.Claims{
@@ -62,17 +83,15 @@ func Login(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "could not generate token"})
 		return
 	}
-
 	c.SetCookie("token", tokenString, int(expirationTime.Unix()), "/", "localhost", false, true)
 	c.JSON(200, gin.H{
-		"email": user.Email,
+		"user":  userInfo,
 		"token": tokenString,
 	})
 }
 
 func Signup(c *gin.Context) {
 	var user models.User
-
 	if user.Name == "" && user.Email == "" && user.Password == "" {
 		c.JSON(403, ErrorMsg(11, "Name, Email or Password is Empty"))
 		return

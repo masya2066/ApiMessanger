@@ -9,3 +9,12 @@ type User struct {
 	Password string `json:"password"`
 	Role     string `json:"role"`
 }
+
+type CreatedUser struct {
+	ID      int    `json:"ID"`
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Role    string `json:"role"`
+	Created string `json:"CreatedAt"`
+	Updated string `json:"UpdatedAt"`
+}

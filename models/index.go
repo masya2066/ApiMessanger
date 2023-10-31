@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"os"
 )
 
 type Config struct {
@@ -33,4 +34,8 @@ func InitDB(cfg Config) {
 	fmt.Println("Migrate database")
 
 	DB = db
+}
+
+func Language() string {
+	return os.Getenv("LANGUAGE")
 }

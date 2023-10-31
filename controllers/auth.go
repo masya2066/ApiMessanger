@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"ApiMessenger/language"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
 	"encoding/json"
@@ -92,13 +93,17 @@ func Login(c *gin.Context) {
 
 func Signup(c *gin.Context) {
 	var user models.User
-	if user.Name == "" && user.Email == "" && user.Password == "" {
-		c.JSON(403, ErrorMsg(11, "Name, Email or Password is Empty"))
-		return
-	}
 
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	user.Role = "user"
+
+	if user.Name == "" || user.Email == "" || user.Password == "" {
+		c.JSON(403, ErrorMsg(11, "Name, Email or Password is Empty"))
+		fmt.Println(&user)
 		return
 	}
 
@@ -121,7 +126,10 @@ func Signup(c *gin.Context) {
 
 	models.DB.Create(&user)
 
-	c.JSON(200, gin.H{"success": "user created " + user.Name})
+	c.JSON(200, gin.H{
+		"success": true,
+		"message": language.Language("success_signup"),
+	})
 }
 
 func Home(c *gin.Context) {
@@ -148,11 +156,6 @@ func Home(c *gin.Context) {
 	c.JSON(200, gin.H{"success": "home page", "role": claims.Role})
 }
 
-func Logout(c *gin.Context) {
-	c.SetCookie("token", "", -1, "/", "localhost", false, true)
-	c.JSON(200, gin.H{"success": "user logged out"})
-}
-
 func Premium(c *gin.Context) {
 
 	cookie, err := c.Cookie("token")
@@ -175,4 +178,9 @@ func Premium(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"success": "premium page", "role": claims.Role})
+}
+
+func Logout(c *gin.Context) {
+	c.SetCookie("token", "", -1, "/", "localhost", false, true)
+	c.JSON(200, gin.H{"success": "user logged out"})
 }

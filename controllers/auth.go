@@ -6,13 +6,14 @@ import (
 	"ApiMessenger/utils"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
-var jwtKey = []byte("my_secret_key")
+var jwtKey = []byte(os.Getenv("SECRET"))
 
 func ErrorMsg(code int, mes string) map[string]any {
 	return gin.H{
@@ -35,14 +36,14 @@ func Login(c *gin.Context) {
 	models.DB.Where("email = ?", user.Email).First(&existingUser)
 
 	if existingUser.ID == 0 {
-		c.JSON(400, gin.H{"error": "user does not exist"})
+		c.JSON(400, ErrorMsg(13, "user_not_exist"))
 		return
 	}
 
 	errHash := utils.CompareHashPassword(user.Password, existingUser.Password)
 
 	if !errHash {
-		c.JSON(400, gin.H{"error": "invalid password"})
+		c.JSON(400, ErrorMsg(14, language.Language("invalid_password")))
 		return
 	}
 
@@ -102,7 +103,7 @@ func Signup(c *gin.Context) {
 	user.Role = "user"
 
 	if user.Name == "" || user.Email == "" || user.Password == "" {
-		c.JSON(403, ErrorMsg(11, "Name, Email or Password is Empty"))
+		c.JSON(403, ErrorMsg(14, language.Language("invalid_reg_data")))
 		fmt.Println(&user)
 		return
 	}
@@ -112,7 +113,7 @@ func Signup(c *gin.Context) {
 	models.DB.Where("email = ?", user.Email).First(&existingUser)
 
 	if existingUser.ID != 0 {
-		c.JSON(400, gin.H{"error": "user already exists"})
+		c.JSON(400, ErrorMsg(12, language.Language("account_already_exist")))
 		return
 	}
 
@@ -120,7 +121,7 @@ func Signup(c *gin.Context) {
 	user.Password, errHash = utils.GenerateHashPassword(user.Password)
 
 	if errHash != nil {
-		c.JSON(500, gin.H{"error": "could not generate password hash"})
+		c.JSON(500, gin.H{"error": "Could not generate password hash"})
 		return
 	}
 
@@ -137,43 +138,43 @@ func Home(c *gin.Context) {
 	cookie, err := c.Cookie("token")
 
 	if err != nil {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
 
 	claims, err := utils.ParseToken(cookie)
 
 	if err != nil {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
 
 	if claims.Role != "user" && claims.Role != "admin" {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
 
 	c.JSON(200, gin.H{"success": "home page", "role": claims.Role})
 }
 
-func Premium(c *gin.Context) {
+func Prem(c *gin.Context) {
 
 	cookie, err := c.Cookie("token")
 
 	if err != nil {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
 
 	claims, err := utils.ParseToken(cookie)
 
 	if err != nil {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
 
 	if claims.Role != "admin" {
-		c.JSON(401, gin.H{"error": "unauthorized"})
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
 
@@ -182,5 +183,5 @@ func Premium(c *gin.Context) {
 
 func Logout(c *gin.Context) {
 	c.SetCookie("token", "", -1, "/", "localhost", false, true)
-	c.JSON(200, gin.H{"success": "user logged out"})
+	c.JSON(200, gin.H{"success": true})
 }

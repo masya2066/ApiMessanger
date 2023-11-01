@@ -4,5 +4,11 @@
   "invalid_login": "Email or password is not correct.",
   "user_not_exist": "User does not exist.",
   "invalid_password": "Incorrect email or password.",
-  "invalid_reg_data": "Name, Email or Password is incorrect!"
+  "invalid_reg_data": "Name, Email or Password is incorrect!",
+  "same_passwords": "Passwords can't be the same!",
+  "short_pass": "Password can't be less 8 characters.",
+  "incorrect_old_pass": "Old password is not correct!",
+  "success_reset_pass": "Change password was success.",
+  "fail_generate_pass_hash": "Could not generate password hash.",
+  "fail_generate_token": "Could not generate auth token."
 }

@@ -17,14 +17,15 @@ func ResetPassword(c *gin.Context) {
 
 	email, err := utils.ParseToken(claims)
 	if err != nil {
-		c.JSON(403, gin.H{"error": err.Error()})
+		c.JSON(403, ErrorMsg(-1, err.Error()))
 		return
 	}
 
 	var reset models.ResetPassword
 
 	if err := c.ShouldBindJSON(&reset); err != nil {
-		ErrorMsg(403, err.Error())
+		c.JSON(403, ErrorMsg(-1, err.Error()))
+		return
 	}
 
 	var usr models.User
@@ -33,30 +34,30 @@ func ResetPassword(c *gin.Context) {
 
 	newPass, err := utils.GenerateHashPassword(reset.NewPassword)
 	if err != nil {
-		ErrorMsg(403, err.Error())
+		c.JSON(403, ErrorMsg(-1, err.Error()))
 		return
 	}
 
 	compare := utils.CompareHashPassword(reset.OldPassword, usr.Password)
 	if compare == false {
-		c.JSON(400, ErrorMsg(400, "Old password is not correct!"))
+		c.JSON(400, ErrorMsg(400, language.Language("incorrect_old_pass")))
 		return
 	}
 
 	if len(reset.NewPassword) < 8 {
-		c.JSON(400, ErrorMsg(16, "Password can't be less 8 characters"))
+		c.JSON(400, ErrorMsg(16, language.Language("short_pass")))
 		return
 	}
 
 	if reset.OldPassword == reset.NewPassword {
-		c.JSON(400, ErrorMsg(15, "Password can't be the same!"))
+		c.JSON(400, ErrorMsg(15, language.Language("same_passwords")))
 		return
 	}
 
 	models.DB.Model(&models.User{}).Where("email = ?", email.Subject).Update("password", newPass)
 	c.JSON(200, gin.H{
 		"success": true,
-		"message": "Password reset was success",
+		"message": language.Language("success_reset_pass"),
 	})
 
 }

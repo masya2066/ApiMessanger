@@ -80,7 +80,7 @@ func Login(c *gin.Context) {
 	tokenString, err := token.SignedString(jwtKey)
 
 	if err != nil {
-		c.JSON(500, gin.H{"error": "could not generate token"})
+		c.JSON(500, ErrorMsg(-1, language.Language("fail_generate_token")))
 		return
 	}
 
@@ -95,7 +95,7 @@ func Signup(c *gin.Context) {
 	var user models.User
 
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(400, ErrorMsg(-1, err.Error()))
 		return
 	}
 
@@ -125,7 +125,7 @@ func Signup(c *gin.Context) {
 	user.Password, errHash = utils.GenerateHashPassword(user.Password)
 
 	if errHash != nil {
-		c.JSON(500, gin.H{"error": "Could not generate password hash"})
+		c.JSON(500, ErrorMsg(-1, language.Language("fail_generate_pass_hash")))
 		return
 	}
 

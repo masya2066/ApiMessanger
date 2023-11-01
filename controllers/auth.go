@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"os"
 	"time"
 )
 
@@ -15,6 +16,7 @@ var jwtKey = []byte("my_secret_key")
 
 func ErrorMsg(code int, mes string) map[string]any {
 	return gin.H{
+		"success": false,
 		"code":    code,
 		"message": mes,
 	}
@@ -65,7 +67,14 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	expirationTime := time.Now().Add(5 * time.Minute)
+	TokenLife := os.Getenv("TOKEN_LIFE_TIME")
+
+	life, err := time.ParseDuration(TokenLife)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	expirationTime := time.Now().Add(life)
 
 	claims := &models.Claims{
 		Role: existingUser.Role,

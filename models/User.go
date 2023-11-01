@@ -15,6 +15,7 @@ type CreatedUser struct {
 	ID      int    `json:"ID"`
 	Name    string `json:"name"`
 	Email   string `json:"email"`
+	Number  string `json:"number"`
 	Role    string `json:"role"`
 	Created string `json:"CreatedAt"`
 	Updated string `json:"UpdatedAt"`

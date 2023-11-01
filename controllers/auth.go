@@ -8,11 +8,10 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"os"
 	"time"
 )
 
-var jwtKey = []byte(os.Getenv("SECRET"))
+var jwtKey = []byte("my_secret_key")
 
 func ErrorMsg(code int, mes string) map[string]any {
 	return gin.H{

@@ -6,6 +6,7 @@ type User struct {
 	gorm.Model
 	Name     string `json:"name"`
 	Email    string `gorm:"unique" json:"email"`
+	Number   string `gorm:"unique" json:"number"`
 	Password string `json:"password"`
 	Role     string `json:"role"`
 }
@@ -17,4 +18,9 @@ type CreatedUser struct {
 	Role    string `json:"role"`
 	Created string `json:"CreatedAt"`
 	Updated string `json:"UpdatedAt"`
+}
+
+type ResetPassword struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
 }

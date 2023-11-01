@@ -29,6 +29,7 @@ func main() {
 	models.InitDB(config)
 
 	routes.AuthRoutes(r)
+	routes.UserRoutes(r)
 
 	r.Run(":8080")
 }

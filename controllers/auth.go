@@ -6,11 +6,10 @@ import (
 	"ApiMessenger/utils"
 	"encoding/json"
 	"fmt"
-	"os"
-	"time"
-
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"os"
+	"time"
 )
 
 var jwtKey = []byte(os.Getenv("SECRET"))
@@ -36,7 +35,7 @@ func Login(c *gin.Context) {
 	models.DB.Where("email = ?", user.Email).First(&existingUser)
 
 	if existingUser.ID == 0 {
-		c.JSON(400, ErrorMsg(13, "user_not_exist"))
+		c.JSON(400, ErrorMsg(13, language.Language("user_not_exist")))
 		return
 	}
 
@@ -85,6 +84,7 @@ func Login(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "could not generate token"})
 		return
 	}
+
 	c.SetCookie("token", tokenString, int(expirationTime.Unix()), "/", "localhost", false, true)
 	c.JSON(200, gin.H{
 		"user":  userInfo,
@@ -105,6 +105,11 @@ func Signup(c *gin.Context) {
 	if user.Name == "" || user.Email == "" || user.Password == "" {
 		c.JSON(403, ErrorMsg(14, language.Language("invalid_reg_data")))
 		fmt.Println(&user)
+		return
+	}
+
+	if user.Number == "" {
+		c.JSON(403, ErrorMsg(15, "Number is empty"))
 		return
 	}
 

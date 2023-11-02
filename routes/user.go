@@ -7,4 +7,5 @@ import (
 
 func UserRoutes(r *gin.Engine) {
 	r.POST("/reset/password", controllers.ResetPassword)
+	r.GET("/user/info", controllers.UserInfo)
 }

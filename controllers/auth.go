@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var jwtKey = []byte("my_secret_key")
+var jwtKey = []byte("$2a$14$cTtWCEgT1Vl2Q1orRe1GRObekuWfmW3DEhsf.I9kgoG45SkMg/Y.2")
 
 func ErrorMsg(code int, mes string) map[string]any {
 	return gin.H{

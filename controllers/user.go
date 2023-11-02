@@ -61,3 +61,31 @@ func ResetPassword(c *gin.Context) {
 	})
 
 }
+
+func UserInfo(c *gin.Context) {
+	var user models.User
+
+	cookie, err := c.Cookie("token")
+	if err != nil {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
+	claims, err := utils.ParseToken(cookie)
+	if err != nil {
+		c.JSON(403, ErrorMsg(-1, err.Error()))
+		return
+	}
+
+	models.DB.Model(&models.User{}).Where("email = ?", claims.Subject).First(&user)
+
+	c.JSON(200, gin.H{
+		"id":     user.ID,
+		"name":   user.Name,
+		"email":  user.Email,
+		"number": "+" + user.Number,
+		"create": user.CreatedAt,
+		"update": user.UpdatedAt,
+	})
+
+}

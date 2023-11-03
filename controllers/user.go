@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"ApiMessenger/consumers"
 	"ApiMessenger/language"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
@@ -88,4 +89,7 @@ func UserInfo(c *gin.Context) {
 		"update": user.UpdatedAt,
 	})
 
+	consumers.SendJSON(models.RMQMessage{
+		SessionLost: false,
+	})
 }

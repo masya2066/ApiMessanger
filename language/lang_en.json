@@ -10,5 +10,9 @@
   "incorrect_old_pass": "Old password is not correct!",
   "success_reset_pass": "Change password was success.",
   "fail_generate_pass_hash": "Could not generate password hash.",
-  "fail_generate_token": "Could not generate auth token."
+  "fail_generate_token": "Could not generate auth token.",
+  "invalid_chat_name": "Invalid chat name.",
+  "invalid_chat_id": "Invalid chat id.",
+  "delete_chat_impossible": "Deleting chat is impossible",
+  "delete_chat_successful": "Delete chat was successful"
 }

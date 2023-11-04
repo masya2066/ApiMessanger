@@ -30,6 +30,7 @@ func main() {
 
 	routes.AuthRoutes(r)
 	routes.UserRoutes(r)
+	routes.ChatRoutes(r)
 
 	r.Run(":8080")
 }

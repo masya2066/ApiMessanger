@@ -6,21 +6,8 @@ import (
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
 	"github.com/gin-gonic/gin"
-	"reflect"
-	"strconv"
 	"time"
 )
-
-func isArray(input []int) bool {
-	valueType := reflect.TypeOf(input)
-	if len(input) != 0 {
-		if valueType.Kind() == reflect.Slice {
-			elemType := valueType.Elem()
-			return elemType.Kind() == reflect.Int
-		}
-	}
-	return false
-}
 
 type ChatBody struct {
 	Name    string `json:"name"`
@@ -52,7 +39,7 @@ func NewChat(c *gin.Context) {
 
 	_ = c.ShouldBindJSON(&body)
 
-	if isArray(body.Members) == false {
+	if utils.IsArray(body.Members) == false {
 		c.JSON(400, ErrorMsg(25, language.Language("members_is_not_array")))
 		return
 	}
@@ -69,19 +56,30 @@ func NewChat(c *gin.Context) {
 	chat.Owner = user.ID
 	chat.ChatId = code
 
+	var chatMembers models.ChatMembers
+	var checkUser models.User
+	var users []int
+
+	for i := 0; i < len(body.Members); i++ {
+		models.DB.Model(&models.User{}).Where("ID = ?", body.Members[i]).First(&checkUser)
+
+		if checkUser.ID == 0 {
+			users = append(users, body.Members[i])
+		}
+		checkUser.ID = 0
+	}
+
+	if len(users) != 0 {
+		c.JSON(400, ErrorMsg(26, language.Language("error_invite_member_to_chat")+utils.IntSliceToString(users)))
+		return
+	}
+
 	models.DB.Create(&chat)
 
 	models.DB.Create(&models.ChatMembers{UserId: int(chat.Owner), ChatId: chat.ChatId, Owner: true, Role: parse.Role, DateAdded: time.Time{}})
 
-	var chatMembers models.ChatMembers
-	var checkUser models.User
-
 	for i := 0; i < len(body.Members); i++ {
 		models.DB.Model(&models.User{}).Where("ID = ?", body.Members[i]).First(&checkUser)
-		if checkUser.ID == 0 {
-			c.JSON(400, ErrorMsg(26, language.Language("error_invite_member_to_chat")+strconv.FormatUint(uint64(body.Members[i]), 10)))
-			return
-		}
 
 		if chat.Owner == uint(body.Members[i]) {
 			c.JSON(400, ErrorMsg(27, language.Language("owner_self_invite")))
@@ -157,8 +155,7 @@ func DeleteChat(c *gin.Context) {
 
 func ListChat(c *gin.Context) {
 	var user models.User
-	var chat models.Chat
-	var chats []models.Chat
+	var chats []models.ChatMembers
 
 	cookie, err := c.Cookie("token")
 	if err != nil {
@@ -178,7 +175,7 @@ func ListChat(c *gin.Context) {
 	}
 
 	models.DB.Model(&user).Where("email = ?", parse.Subject).First(&user)
-	models.DB.Model(&chat).Where("owner = ?", user.ID).Find(&chats)
+	models.DB.Model(&models.ChatMembers{}).Where("user_id = ?", user.ID).Find(&chats)
 
 	c.JSON(200, chats)
 

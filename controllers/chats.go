@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"ApiMessenger/consumers"
 	"ApiMessenger/language"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
@@ -13,6 +14,11 @@ func NewChat(c *gin.Context) {
 
 	cookie, err := c.Cookie("token")
 	if err != nil {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
+	if cookie == "" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
@@ -36,6 +42,7 @@ func NewChat(c *gin.Context) {
 	chat.Owner = user.ID
 	chat.ChatId = code
 	models.DB.Create(&chat)
+	consumers.SendJSON(models.RMQMessage{SessionLost: false, ChatId: chat.ChatId, ChatDeleted: false, ChatCreated: true})
 
 	c.JSON(200, gin.H{
 		"success": true,
@@ -52,6 +59,11 @@ func DeleteChat(c *gin.Context) {
 
 	cookie, err := c.Cookie("token")
 	if err != nil {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
+	if cookie == "" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
@@ -82,6 +94,7 @@ func DeleteChat(c *gin.Context) {
 	}
 
 	models.DB.Delete(chat)
+	consumers.SendJSON(models.RMQMessage{SessionLost: false, ChatId: chat.ChatId, ChatDeleted: true, ChatCreated: false})
 	c.JSON(200, gin.H{
 		"success": true,
 		"message": language.Language("delete_chat_successful"),
@@ -90,5 +103,30 @@ func DeleteChat(c *gin.Context) {
 }
 
 func ListChat(c *gin.Context) {
+	var user models.User
+	var chat models.Chat
+	var chats []models.Chat
+
+	cookie, err := c.Cookie("token")
+	if err != nil {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
+	if cookie == "" {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
+	parse, err := utils.ParseToken(cookie)
+	if err != nil {
+		c.JSON(403, ErrorMsg(-1, err.Error()))
+		return
+	}
+
+	models.DB.Model(&user).Where("email = ?", parse.Subject).First(&user)
+	models.DB.Model(&chat).Where("owner = ?", user.ID).Find(&chats)
+
+	c.JSON(200, chats)
 
 }

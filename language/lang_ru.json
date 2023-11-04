@@ -14,5 +14,8 @@
   "invalid_chat_name": "Некорректное имя чата.",
   "invalid_chat_id": "Указан некорректный id чата",
   "delete_chat_impossible": "Невозможно удалить чат.",
-  "с": "Чат был успешно удален."
+  "delete_chat_successful": "Чат был успешно удален.",
+  "members_is_not_array": "Параметр members должен быть типа Array и не пустым.",
+  "error_invite_member_to_chat": "Возникли проблемы с добавлением пользователей с ID: ",
+  "owner_self_invite": "Вы не может добавить в чат сами себя."
 }

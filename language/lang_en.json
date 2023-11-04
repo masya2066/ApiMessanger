@@ -14,5 +14,8 @@
   "invalid_chat_name": "Invalid chat name.",
   "invalid_chat_id": "Invalid chat id.",
   "delete_chat_impossible": "Deleting chat is impossible",
-  "delete_chat_successful": "Delete chat was successful"
+  "delete_chat_successful": "Delete chat was successful",
+  "members_is_not_array": "Members should be type Array or Empty",
+  "error_invite_member_to_chat": "Invite error users with ID: ",
+  "owner_self_invite": "You can invite yourself"
 }

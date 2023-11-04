@@ -5,33 +5,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/streadway/amqp"
-	"log"
 )
 
 func SendJSON(model models.RMQMessage) {
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	if err != nil {
 		fmt.Println("RabbitMQ connection error:", err)
-		panic(err)
+		return
 	}
 	defer func(conn *amqp.Connection) {
 		err := conn.Close()
 		if err != nil {
 			fmt.Println("RabbitMQ close connection error:", err)
-			panic(err)
+			return
 		}
 	}(conn)
 
 	ch, err := conn.Channel()
 	if err != nil {
 		fmt.Println("RabbitMQ connect channel error:", err)
-		panic(err)
+		return
 	}
 
 	defer func(ch *amqp.Channel) {
 		err := ch.Close()
 		if err != nil {
 			fmt.Println("RabbitMQ close channel error:", err)
+			return
 		}
 	}(ch)
 
@@ -44,7 +44,8 @@ func SendJSON(model models.RMQMessage) {
 		nil,
 	)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
 
 	fmt.Println(q)
@@ -52,7 +53,8 @@ func SendJSON(model models.RMQMessage) {
 	jsonData, err := json.Marshal(model)
 
 	if err != nil {
-		log.Fatal("JSON Marshalling error:", err)
+		fmt.Println("JSON Marshalling error:", err)
+		return
 	}
 
 	err = ch.Publish(

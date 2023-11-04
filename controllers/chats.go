@@ -6,7 +6,26 @@ import (
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
 	"github.com/gin-gonic/gin"
+	"reflect"
+	"strconv"
+	"time"
 )
+
+func isArray(input []int) bool {
+	valueType := reflect.TypeOf(input)
+	if len(input) != 0 {
+		if valueType.Kind() == reflect.Slice {
+			elemType := valueType.Elem()
+			return elemType.Kind() == reflect.Int
+		}
+	}
+	return false
+}
+
+type ChatBody struct {
+	Name    string `json:"name"`
+	Members []int  `json:"members"`
+}
 
 func NewChat(c *gin.Context) {
 	var chat models.Chat
@@ -29,26 +48,60 @@ func NewChat(c *gin.Context) {
 		return
 	}
 
-	models.DB.Model(&models.User{}).Where("email = ?", parse.Subject).First(&user)
+	var body ChatBody
 
-	err = c.ShouldBindJSON(&chat)
+	_ = c.ShouldBindJSON(&body)
 
-	if chat.Name == "" {
+	if isArray(body.Members) == false {
+		c.JSON(400, ErrorMsg(25, language.Language("members_is_not_array")))
+		return
+	}
+
+	if body.Name == "" {
 		c.JSON(403, ErrorMsg(20, language.Language("invalid_chat_name")))
 		return
 	}
 
+	models.DB.Model(&models.User{}).Where("email = ?", parse.Subject).First(&user)
+
 	code := utils.GenerateId()
+	chat.Name = body.Name
 	chat.Owner = user.ID
 	chat.ChatId = code
+
 	models.DB.Create(&chat)
+
+	models.DB.Create(&models.ChatMembers{UserId: int(chat.Owner), ChatId: chat.ChatId, Owner: true, Role: parse.Role, DateAdded: time.Time{}})
+
+	var chatMembers models.ChatMembers
+	var checkUser models.User
+
+	for i := 0; i < len(body.Members); i++ {
+		models.DB.Model(&models.User{}).Where("ID = ?", body.Members[i]).First(&checkUser)
+		if checkUser.ID == 0 {
+			c.JSON(400, ErrorMsg(26, language.Language("error_invite_member_to_chat")+strconv.FormatUint(uint64(body.Members[i]), 10)))
+			return
+		}
+
+		if chat.Owner == uint(body.Members[i]) {
+			c.JSON(400, ErrorMsg(27, language.Language("owner_self_invite")))
+			return
+		}
+		chatMembers.ChatId = chat.ChatId
+		chatMembers.Owner = false
+		chatMembers.DateAdded = time.Time{}
+		chatMembers.UserId = body.Members[i]
+		chatMembers.Role = checkUser.Role
+		models.DB.Model(&chatMembers).Create(&chatMembers)
+	}
 	consumers.SendJSON(models.RMQMessage{SessionLost: false, ChatId: chat.ChatId, ChatDeleted: false, ChatCreated: true})
 
 	c.JSON(200, gin.H{
 		"success": true,
 		"chat_id": code,
 		"owner":   user.ID,
-		"name":    chat.Name,
+		"name":    body.Name,
+		"members": body.Members,
 	})
 }
 

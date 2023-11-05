@@ -24,3 +24,15 @@ func IsArray(input []int) bool {
 	}
 	return false
 }
+
+func HasDuplicatesInArray(slice []int) bool {
+	seen := make(map[int]struct{})
+
+	for _, item := range slice {
+		if _, exists := seen[item]; exists {
+			return true
+		}
+		seen[item] = struct{}{}
+	}
+	return false
+}

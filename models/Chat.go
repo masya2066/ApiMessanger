@@ -6,7 +6,7 @@ import (
 
 type Chat struct {
 	ID      int       `gorm:"unique" json:"id"`
-	ChatId  string    `json:"chat_id"`
+	ChatId  string    `json:"chatId"`
 	Name    string    `json:"name"`
 	Public  bool      `json:"public"`
 	Owner   uint      `json:"owner"`
@@ -23,10 +23,19 @@ type ChatMembers struct {
 	DateUpdated time.Time `json:"updated"`
 }
 
-func UsersOfChat(chatId string) []int {
+type ChatInfo struct {
+	ChatId  string    `json:"chat_id"`
+	Members []int     `json:"members"`
+	Owner   int       `json:"owner"`
+	Role    string    `json:"role"`
+	Created time.Time `json:"created"`
+	Updated time.Time `json:"updated"`
+}
+
+func UsersOfChat(chatsId string) []int {
 	var chat []ChatMembers
 	var users []int
-	DB.Model(ChatMembers{}).Where("chat_id = ?", chatId).Find(&chat)
+	DB.Model(ChatMembers{}).Where("chat_id = ?", chatsId).Find(&chat)
 	for _, chatMember := range chat {
 		users = append(users, chatMember.UserId)
 	}

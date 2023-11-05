@@ -5,7 +5,6 @@ import (
 	"ApiMessenger/language"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"time"
 )
@@ -45,6 +44,11 @@ func NewChat(c *gin.Context) {
 		return
 	}
 
+	if utils.HasDuplicatesInArray(body.Members) == true {
+		c.JSON(400, ErrorMsg(26, language.Language("members_has_duplicated")))
+		return
+	}
+
 	if body.Name == "" {
 		c.JSON(403, ErrorMsg(20, language.Language("invalid_chat_name")))
 		return
@@ -74,6 +78,9 @@ func NewChat(c *gin.Context) {
 		c.JSON(400, ErrorMsg(26, language.Language("error_invite_member_to_chat")+utils.IntSliceToString(users)))
 		return
 	}
+
+	chat.Created = time.Now()
+	chat.Updated = time.Now()
 
 	models.DB.Create(&chat)
 
@@ -179,13 +186,26 @@ func ListChat(c *gin.Context) {
 	models.DB.Model(&user).Where("email = ?", parse.Subject).First(&user)
 	models.DB.Model(&models.ChatMembers{}).Where("user_id = ?", user.ID).Order("date_updated DESC").Find(&chats)
 
-	var chatId []string
-	var member []models.ChatMembers
+	var chatsId []string
 	for _, chatMember := range chats {
-		chatId = append(chatId, chatMember.ChatId)
+		chatsId = append(chatsId, chatMember.ChatId)
 	}
-	fmt.Println(chatId)
-	fmt.Println(models.UsersOfChat(chatId[0]))
 
-	c.JSON(200, member)
+	var chatList []models.ChatInfo
+	var chatInfo models.ChatInfo
+	var chat models.Chat
+	for i := 0; i < len(chatsId); i++ {
+		models.DB.Where("chat_id = ?", chatsId[i]).Limit(1).First(&chat)
+		chatInfo.ChatId = chatsId[i]
+		chatInfo.Owner = int(user.ID)
+		chatInfo.Role = user.Role
+		chatInfo.Members = models.UsersOfChat(chatsId[i])
+		chatInfo.Created = chat.Created
+		chatInfo.Updated = chat.Updated
+
+		chatList = append(chatList, chatInfo)
+		chat.ID = 0
+	}
+
+	c.JSON(200, chatList)
 }

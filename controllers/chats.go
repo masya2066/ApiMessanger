@@ -5,6 +5,7 @@ import (
 	"ApiMessenger/language"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"time"
 )
@@ -195,7 +196,7 @@ func ListChat(c *gin.Context) {
 	var chatInfo models.ChatInfo
 	var chat models.Chat
 	for i := 0; i < len(chatsId); i++ {
-		models.DB.Where("chat_id = ?", chatsId[i]).Limit(1).First(&chat)
+		models.DB.Where("chat_id = ?", chatsId[i]).First(&chat)
 		chatInfo.ChatId = chatsId[i]
 		chatInfo.Owner = int(user.ID)
 		chatInfo.Role = user.Role
@@ -208,4 +209,29 @@ func ListChat(c *gin.Context) {
 	}
 
 	c.JSON(200, chatList)
+}
+
+func ChatInfo(c *gin.Context) {
+	//var user models.User
+	//var chats []models.ChatMembers
+
+	cookie, err := c.Cookie("token")
+	if err != nil {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
+	if cookie == "" {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
+	parse, err := utils.ParseToken(cookie)
+	if err != nil {
+		c.JSON(403, ErrorMsg(-1, err.Error()))
+		return
+	}
+
+	fmt.Println(parse.Subject)
+	fmt.Println(c.Param("id"))
 }

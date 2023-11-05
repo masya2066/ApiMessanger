@@ -17,8 +17,18 @@ type Chat struct {
 type ChatMembers struct {
 	UserId      int       `json:"user_id"`
 	ChatId      string    `json:"chat_id"`
-	Owner       bool      `json:"owner"`
+	Owner       int       `json:"owner"`
 	Role        string    `json:"role"`
 	DateCreated time.Time `json:"created"`
 	DateUpdated time.Time `json:"updated"`
+}
+
+func UsersOfChat(chatId string) []int {
+	var chat []ChatMembers
+	var users []int
+	DB.Model(ChatMembers{}).Where("chat_id = ?", chatId).Find(&chat)
+	for _, chatMember := range chat {
+		users = append(users, chatMember.UserId)
+	}
+	return users
 }

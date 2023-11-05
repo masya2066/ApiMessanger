@@ -5,6 +5,7 @@ import (
 	"ApiMessenger/language"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"time"
 )
@@ -76,7 +77,7 @@ func NewChat(c *gin.Context) {
 
 	models.DB.Create(&chat)
 
-	models.DB.Create(&models.ChatMembers{UserId: int(chat.Owner), ChatId: chat.ChatId, Owner: true, Role: parse.Role, DateCreated: time.Now(), DateUpdated: time.Now()})
+	models.DB.Create(&models.ChatMembers{UserId: int(chat.Owner), ChatId: chat.ChatId, Owner: 1, Role: parse.Role, DateCreated: time.Now(), DateUpdated: time.Now()})
 
 	for i := 0; i < len(body.Members); i++ {
 		models.DB.Model(&models.User{}).Where("ID = ?", body.Members[i]).First(&checkUser)
@@ -86,7 +87,7 @@ func NewChat(c *gin.Context) {
 			return
 		}
 		chatMembers.ChatId = chat.ChatId
-		chatMembers.Owner = false
+		chatMembers.Owner = 0
 		chatMembers.DateCreated = time.Now()
 		chatMembers.DateUpdated = time.Now()
 		chatMembers.UserId = body.Members[i]
@@ -178,5 +179,13 @@ func ListChat(c *gin.Context) {
 	models.DB.Model(&user).Where("email = ?", parse.Subject).First(&user)
 	models.DB.Model(&models.ChatMembers{}).Where("user_id = ?", user.ID).Order("date_updated DESC").Find(&chats)
 
-	c.JSON(200, chats)
+	var chatId []string
+	var member []models.ChatMembers
+	for _, chatMember := range chats {
+		chatId = append(chatId, chatMember.ChatId)
+	}
+	fmt.Println(chatId)
+	fmt.Println(models.UsersOfChat(chatId[0]))
+
+	c.JSON(200, member)
 }

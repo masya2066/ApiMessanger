@@ -76,7 +76,7 @@ func NewChat(c *gin.Context) {
 
 	models.DB.Create(&chat)
 
-	models.DB.Create(&models.ChatMembers{UserId: int(chat.Owner), ChatId: chat.ChatId, Owner: true, Role: parse.Role, DateAdded: time.Time{}})
+	models.DB.Create(&models.ChatMembers{UserId: int(chat.Owner), ChatId: chat.ChatId, Owner: true, Role: parse.Role, DateCreated: time.Now(), DateUpdated: time.Now()})
 
 	for i := 0; i < len(body.Members); i++ {
 		models.DB.Model(&models.User{}).Where("ID = ?", body.Members[i]).First(&checkUser)
@@ -87,7 +87,8 @@ func NewChat(c *gin.Context) {
 		}
 		chatMembers.ChatId = chat.ChatId
 		chatMembers.Owner = false
-		chatMembers.DateAdded = time.Time{}
+		chatMembers.DateCreated = time.Now()
+		chatMembers.DateUpdated = time.Now()
 		chatMembers.UserId = body.Members[i]
 		chatMembers.Role = checkUser.Role
 		models.DB.Model(&chatMembers).Create(&chatMembers)
@@ -175,8 +176,7 @@ func ListChat(c *gin.Context) {
 	}
 
 	models.DB.Model(&user).Where("email = ?", parse.Subject).First(&user)
-	models.DB.Model(&models.ChatMembers{}).Where("user_id = ?", user.ID).Find(&chats)
+	models.DB.Model(&models.ChatMembers{}).Where("user_id = ?", user.ID).Order("date_updated DESC").Find(&chats)
 
 	c.JSON(200, chats)
-
 }

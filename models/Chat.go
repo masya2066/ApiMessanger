@@ -6,10 +6,11 @@ import (
 
 type Chat struct {
 	ID      int       `gorm:"unique" json:"id"`
-	ChatId  string    `json:"chatId"`
+	ChatId  string    `json:"chat_Id"`
 	Name    string    `json:"name"`
 	Public  bool      `json:"public"`
 	Owner   uint      `json:"owner"`
+	Phrase  string    `json:"phrase"`
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`
 }
@@ -27,7 +28,6 @@ type ChatInfo struct {
 	ChatId  string    `json:"chat_id"`
 	Members []int     `json:"members"`
 	Owner   int       `json:"owner"`
-	Role    string    `json:"role"`
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`
 }

@@ -82,6 +82,7 @@ func NewChat(c *gin.Context) {
 
 	chat.Created = time.Now()
 	chat.Updated = time.Now()
+	chat.Phrase = utils.GenerateRandomSecretPhrase()
 
 	models.DB.Create(&chat)
 
@@ -199,7 +200,6 @@ func ListChat(c *gin.Context) {
 		models.DB.Where("chat_id = ?", chatsId[i]).First(&chat)
 		chatInfo.ChatId = chatsId[i]
 		chatInfo.Owner = int(user.ID)
-		chatInfo.Role = user.Role
 		chatInfo.Members = models.UsersOfChat(chatsId[i])
 		chatInfo.Created = chat.Created
 		chatInfo.Updated = chat.Updated

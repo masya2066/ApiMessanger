@@ -25,6 +25,7 @@ type ChatMembers struct {
 }
 
 type ChatInfo struct {
+	Name    string    `json:"name"`
 	ChatId  string    `json:"chat_id"`
 	Members []int     `json:"members"`
 	Owner   int       `json:"owner"`

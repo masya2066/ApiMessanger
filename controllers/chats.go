@@ -5,7 +5,6 @@ import (
 	"ApiMessenger/language"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"time"
 )
@@ -198,6 +197,7 @@ func ListChat(c *gin.Context) {
 	var chat models.Chat
 	for i := 0; i < len(chatsId); i++ {
 		models.DB.Where("chat_id = ?", chatsId[i]).First(&chat)
+		chatInfo.Name = chat.Name
 		chatInfo.ChatId = chatsId[i]
 		chatInfo.Owner = int(user.ID)
 		chatInfo.Members = models.UsersOfChat(chatsId[i])
@@ -212,9 +212,6 @@ func ListChat(c *gin.Context) {
 }
 
 func ChatInfo(c *gin.Context) {
-	//var user models.User
-	//var chats []models.ChatMembers
-
 	cookie, err := c.Cookie("token")
 	if err != nil {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
@@ -232,6 +229,25 @@ func ChatInfo(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(parse.Subject)
-	fmt.Println(c.Param("id"))
+	var user models.User
+
+	models.DB.Where("email = ?", parse.Subject).First(&user)
+
+	chatId := c.Param("id")
+
+	var chatMembers models.ChatMembers
+	var chat models.Chat
+
+	models.DB.Where("user_id = ? AND chat_id = ?", user.ID, chatId).First(&chatMembers)
+
+	if chatMembers.ChatId == "" || chatMembers.UserId == 0 {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+	models.DB.Where("chat_id = ?", chatId).First(&chat)
+
+	chatInfo := models.ChatInfo{Name: chat.Name, ChatId: chatId, Members: models.UsersOfChat(chatId), Owner: int(chat.Owner), Created: chat.Created, Updated: chat.Updated}
+
+	c.JSON(200, chatInfo)
+
 }

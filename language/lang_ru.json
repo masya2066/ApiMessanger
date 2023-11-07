@@ -19,5 +19,6 @@
   "members_is_not_array": "Параметр members должен быть типа Array и не пустым.",
   "members_has_duplicated": "Параметр 'members' имеет дубликаты.",
   "error_invite_member_to_chat": "Возникли проблемы с добавлением пользователей с ID: ",
-  "owner_self_invite": "Вы не может добавить в чат сами себя."
+  "owner_self_invite": "Вы не может добавить в чат сами себя.",
+  "chats_empty": "У вас нет чатов."
 }

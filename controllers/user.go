@@ -33,6 +33,11 @@ func ResetPassword(c *gin.Context) {
 
 	_ = models.DB.Model(&models.User{}).Where("number = ?", number.Subject).First(&usr)
 
+	if usr.ID == 0 {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
 	newPass, err := utils.GenerateHashPassword(reset.NewPassword)
 	if err != nil {
 		c.JSON(403, ErrorMsg(-1, err.Error()))
@@ -79,6 +84,11 @@ func UserInfo(c *gin.Context) {
 	}
 
 	models.DB.Model(&models.User{}).Where("number = ?", claims.Subject).First(&user)
+
+	if user.ID == 0 {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
 
 	c.JSON(200, gin.H{
 		"id":     user.ID,

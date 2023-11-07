@@ -57,6 +57,11 @@ func NewChat(c *gin.Context) {
 
 	models.DB.Model(&models.User{}).Where("number = ?", parse.Subject).First(&user)
 
+	if user.ID == 0 {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
 	code := utils.GenerateId()
 	chat.Name = body.Name
 	chat.Owner = user.ID
@@ -144,6 +149,12 @@ func DeleteChat(c *gin.Context) {
 	}
 
 	models.DB.Model(&user).Where("number = ?", parse.Subject).First(&user)
+
+	if user.ID == 0 {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
 	models.DB.Model(&chat).Where("chat_id = ?", body.ChatId).First(&chat)
 
 	if chat.ChatId == "" {
@@ -187,8 +198,18 @@ func ListChat(c *gin.Context) {
 	}
 
 	models.DB.Model(&user).Where("number = ?", parse.Subject).First(&user)
-	fmt.Println(user)
+
+	if user.ID == 0 {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
 	models.DB.Model(&models.ChatMembers{}).Where("user_id = ?", user.ID).Order("date_updated DESC").Find(&chats)
+
+	if len(chats) == 0 {
+		c.JSON(200, ErrorMsg(24, language.Language("chats_empty")))
+		return
+	}
 
 	var chatsId []string
 	for _, chatMember := range chats {
@@ -236,6 +257,11 @@ func ChatInfo(c *gin.Context) {
 	var user models.User
 
 	models.DB.Where("number = ?", parse.Subject).First(&user)
+
+	if user.ID == 0 {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
 
 	chatId := c.Param("id")
 

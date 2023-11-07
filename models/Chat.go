@@ -18,7 +18,7 @@ type Chat struct {
 type ChatMembers struct {
 	UserId      int       `json:"user_id"`
 	ChatId      string    `json:"chat_id"`
-	Owner       int       `json:"owner"`
+	Owner       bool      `json:"owner"`
 	Role        string    `json:"role"`
 	DateCreated time.Time `json:"created"`
 	DateUpdated time.Time `json:"updated"`

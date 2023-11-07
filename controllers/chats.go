@@ -85,7 +85,7 @@ func NewChat(c *gin.Context) {
 
 	models.DB.Create(&chat)
 
-	models.DB.Create(&models.ChatMembers{UserId: int(chat.Owner), ChatId: chat.ChatId, Owner: 1, Role: parse.Role, DateCreated: time.Now(), DateUpdated: time.Now()})
+	models.DB.Create(&models.ChatMembers{UserId: int(chat.Owner), ChatId: chat.ChatId, Owner: true, Role: parse.Role, DateCreated: time.Now(), DateUpdated: time.Now()})
 
 	for i := 0; i < len(body.Members); i++ {
 		models.DB.Model(&models.User{}).Where("ID = ?", body.Members[i]).First(&checkUser)
@@ -95,7 +95,7 @@ func NewChat(c *gin.Context) {
 			return
 		}
 		chatMembers.ChatId = chat.ChatId
-		chatMembers.Owner = 0
+		chatMembers.Owner = false
 		chatMembers.DateCreated = time.Now()
 		chatMembers.DateUpdated = time.Now()
 		chatMembers.UserId = body.Members[i]

@@ -16,7 +16,7 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	email, err := utils.ParseToken(claims)
+	number, err := utils.ParseToken(claims)
 	if err != nil {
 		c.JSON(403, ErrorMsg(-1, err.Error()))
 		return
@@ -31,7 +31,7 @@ func ResetPassword(c *gin.Context) {
 
 	var usr models.User
 
-	_ = models.DB.Model(&models.User{}).Where("email = ?", email.Subject).First(&usr)
+	_ = models.DB.Model(&models.User{}).Where("number = ?", number.Subject).First(&usr)
 
 	newPass, err := utils.GenerateHashPassword(reset.NewPassword)
 	if err != nil {
@@ -55,7 +55,7 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	models.DB.Model(&models.User{}).Where("email = ?", email.Subject).Update("password", newPass)
+	models.DB.Model(&models.User{}).Where("number = ?", number.Subject).Update("password", newPass)
 	c.JSON(200, gin.H{
 		"success": true,
 		"message": language.Language("success_reset_pass"),
@@ -78,7 +78,7 @@ func UserInfo(c *gin.Context) {
 		return
 	}
 
-	models.DB.Model(&models.User{}).Where("email = ?", claims.Subject).First(&user)
+	models.DB.Model(&models.User{}).Where("number = ?", claims.Subject).First(&user)
 
 	c.JSON(200, gin.H{
 		"id":     user.ID,

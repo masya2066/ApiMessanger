@@ -5,6 +5,7 @@ import (
 	"ApiMessenger/language"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"time"
 )
@@ -54,7 +55,7 @@ func NewChat(c *gin.Context) {
 		return
 	}
 
-	models.DB.Model(&models.User{}).Where("email = ?", parse.Subject).First(&user)
+	models.DB.Model(&models.User{}).Where("number = ?", parse.Subject).First(&user)
 
 	code := utils.GenerateId()
 	chat.Name = body.Name
@@ -63,20 +64,28 @@ func NewChat(c *gin.Context) {
 
 	var chatMembers models.ChatMembers
 	var checkUser models.User
-	var users []int
+	var invalidUsers []int
 
 	for i := 0; i < len(body.Members); i++ {
 		models.DB.Model(&models.User{}).Where("ID = ?", body.Members[i]).First(&checkUser)
 
 		if checkUser.ID == 0 {
-			users = append(users, body.Members[i])
+			invalidUsers = append(invalidUsers, body.Members[i])
 		}
 		checkUser.ID = 0
 	}
 
-	if len(users) != 0 {
-		c.JSON(400, ErrorMsg(26, language.Language("error_invite_member_to_chat")+utils.IntSliceToString(users)))
+	if len(invalidUsers) != 0 {
+		c.JSON(400, ErrorMsg(26, language.Language("error_invite_member_to_chat")+utils.IntSliceToString(invalidUsers)))
 		return
+	}
+
+	for i := 0; i < len(body.Members); i++ {
+		models.DB.Model(&models.User{}).Where("ID = ?", body.Members[i]).First(&checkUser)
+		if chat.Owner == uint(body.Members[i]) {
+			c.JSON(400, ErrorMsg(27, language.Language("owner_self_invite")))
+			return
+		}
 	}
 
 	chat.Created = time.Now()
@@ -84,16 +93,10 @@ func NewChat(c *gin.Context) {
 	chat.Phrase = utils.GenerateRandomSecretPhrase()
 
 	models.DB.Create(&chat)
-
 	models.DB.Create(&models.ChatMembers{UserId: int(chat.Owner), ChatId: chat.ChatId, Owner: true, Role: parse.Role, DateCreated: time.Now(), DateUpdated: time.Now()})
+	consumers.SendJSON(models.RMQMessage{SessionLost: false, ChatId: chat.ChatId, ChatDeleted: false, ChatCreated: true})
 
 	for i := 0; i < len(body.Members); i++ {
-		models.DB.Model(&models.User{}).Where("ID = ?", body.Members[i]).First(&checkUser)
-
-		if chat.Owner == uint(body.Members[i]) {
-			c.JSON(400, ErrorMsg(27, language.Language("owner_self_invite")))
-			return
-		}
 		chatMembers.ChatId = chat.ChatId
 		chatMembers.Owner = false
 		chatMembers.DateCreated = time.Now()
@@ -102,7 +105,6 @@ func NewChat(c *gin.Context) {
 		chatMembers.Role = checkUser.Role
 		models.DB.Model(&chatMembers).Create(&chatMembers)
 	}
-	consumers.SendJSON(models.RMQMessage{SessionLost: false, ChatId: chat.ChatId, ChatDeleted: false, ChatCreated: true})
 
 	c.JSON(200, gin.H{
 		"success": true,
@@ -141,7 +143,7 @@ func DeleteChat(c *gin.Context) {
 		return
 	}
 
-	models.DB.Model(&user).Where("email = ?", parse.Subject).First(&user)
+	models.DB.Model(&user).Where("number = ?", parse.Subject).First(&user)
 	models.DB.Model(&chat).Where("chat_id = ?", body.ChatId).First(&chat)
 
 	if chat.ChatId == "" {
@@ -184,7 +186,8 @@ func ListChat(c *gin.Context) {
 		return
 	}
 
-	models.DB.Model(&user).Where("email = ?", parse.Subject).First(&user)
+	models.DB.Model(&user).Where("number = ?", parse.Subject).First(&user)
+	fmt.Println(user)
 	models.DB.Model(&models.ChatMembers{}).Where("user_id = ?", user.ID).Order("date_updated DESC").Find(&chats)
 
 	var chatsId []string
@@ -195,6 +198,7 @@ func ListChat(c *gin.Context) {
 	var chatList []models.ChatInfo
 	var chatInfo models.ChatInfo
 	var chat models.Chat
+	fmt.Println(chatsId)
 	for i := 0; i < len(chatsId); i++ {
 		models.DB.Where("chat_id = ?", chatsId[i]).First(&chat)
 		chatInfo.Name = chat.Name
@@ -231,7 +235,7 @@ func ChatInfo(c *gin.Context) {
 
 	var user models.User
 
-	models.DB.Where("email = ?", parse.Subject).First(&user)
+	models.DB.Where("number = ?", parse.Subject).First(&user)
 
 	chatId := c.Param("id")
 

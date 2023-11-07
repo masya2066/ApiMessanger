@@ -1,10 +1,11 @@
 {
   "success_signup": "Your account was created!",
-  "account_already_exist": "Account with this email already exist!",
-  "invalid_login": "Email or password is not correct.",
+  "account_already_exist": "Account with this number already exist!",
+  "invalid_login": "Number or password is not correct.",
+  "invalid_number": "Invalid number. You can use only digits without special symbols and spaces.",
   "user_not_exist": "User does not exist.",
-  "invalid_password": "Incorrect email or password.",
-  "invalid_reg_data": "Name, Email or Password is incorrect!",
+  "invalid_password": "Incorrect number or password.",
+  "invalid_reg_data": "Name, Number or Password is incorrect!",
   "same_passwords": "Passwords can't be the same!",
   "short_pass": "Password can't be less 8 characters.",
   "incorrect_old_pass": "Old password is not correct!",
@@ -18,5 +19,5 @@
   "members_is_not_array": "Members should be type Array or Empty",
   "members_has_duplicated": "Parameter 'members' has duplicates",
   "error_invite_member_to_chat": "Invite error users with ID: ",
-  "owner_self_invite": "You can invite yourself"
+  "owner_self_invite": "You can't invite yourself"
 }

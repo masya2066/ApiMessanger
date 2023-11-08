@@ -21,12 +21,13 @@ type ChatMembers struct {
 }
 
 type ChatInfo struct {
-	Name    string `json:"name"`
-	ChatId  string `json:"chat_id"`
-	Members []int  `json:"members"`
-	Owner   int    `json:"owner"`
-	Created string `json:"created"`
-	Updated string `json:"updated"`
+	Name     string    `json:"name"`
+	ChatId   string    `json:"chat_id"`
+	Members  []int     `json:"members"`
+	Messages []Message `json:"messages"`
+	Owner    int       `json:"owner"`
+	Created  string    `json:"created"`
+	Updated  string    `json:"updated"`
 }
 
 func UsersOfChat(chatsId string) []int {

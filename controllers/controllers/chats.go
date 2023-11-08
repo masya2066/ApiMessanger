@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"ApiMessenger/consumers"
+	"ApiMessenger/controllers"
 	"ApiMessenger/language"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
@@ -218,18 +219,28 @@ func ListChat(c *gin.Context) {
 	var chatList []models.ChatInfo
 	var chatInfo models.ChatInfo
 	var chat models.Chat
-	fmt.Println(chatsId)
+
 	for i := 0; i < len(chatsId); i++ {
 		models.DB.Where("chat_id = ?", chatsId[i]).First(&chat)
+		mes, err := controllers.GetMessagesOfChat(chat, 1)
+		if err != nil {
+			fmt.Println()
+		}
 		chatInfo.Name = chat.Name
 		chatInfo.ChatId = chatsId[i]
 		chatInfo.Owner = int(user.ID)
 		chatInfo.Members = models.UsersOfChat(chatsId[i])
+		chatInfo.Messages = mes
 		chatInfo.Created = chat.Created
 		chatInfo.Updated = chat.Updated
-
 		chatList = append(chatList, chatInfo)
+		chatInfo.Messages = []models.Message{}
 		chat.ID = 0
+	}
+
+	if len(chatList) == 0 {
+		panic("Error work with chats")
+		return
 	}
 
 	c.JSON(200, chatList)
@@ -275,8 +286,12 @@ func ChatInfo(c *gin.Context) {
 	}
 	models.DB.Where("chat_id = ?", chatId).First(&chat)
 
-	chatInfo := models.ChatInfo{Name: chat.Name, ChatId: chatId, Members: models.UsersOfChat(chatId), Owner: int(chat.Owner), Created: chat.Created, Updated: chat.Updated}
+	mes, err := controllers.GetMessagesOfChat(chat, 1)
+	if err != nil {
+		fmt.Println()
+	}
+
+	chatInfo := models.ChatInfo{Name: chat.Name, ChatId: chatId, Members: models.UsersOfChat(chatId), Messages: mes, Owner: int(chat.Owner), Created: chat.Created, Updated: chat.Updated}
 
 	c.JSON(200, chatInfo)
-
 }

@@ -5,19 +5,7 @@ import (
 	"crypto/cipher"
 	"encoding/base64"
 	"fmt"
-	"math/rand"
 )
-
-func GenerateRandomSecretPhrase() string {
-	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-	secretPhrase := make([]byte, 32)
-	for i := range secretPhrase {
-		secretPhrase[i] = charset[rand.Intn(len(charset))]
-	}
-
-	return string(secretPhrase)
-}
 
 func EncryptMessage(message string, key string) (string, error) {
 	keyBytes := []byte(key)

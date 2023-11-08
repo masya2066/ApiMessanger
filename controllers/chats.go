@@ -7,6 +7,7 @@ import (
 	"ApiMessenger/utils"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"os"
 	"time"
 )
 
@@ -93,19 +94,17 @@ func NewChat(c *gin.Context) {
 		}
 	}
 
-	chat.Created = time.Now()
-	chat.Updated = time.Now()
+	chat.Created, chat.Updated = time.Now().UTC().Format(os.Getenv("DATE_FORMAT")), time.Now().UTC().Format(os.Getenv("DATE_FORMAT"))
 	chat.Phrase = utils.GenerateRandomSecretPhrase()
 
 	models.DB.Create(&chat)
-	models.DB.Create(&models.ChatMembers{UserId: int(chat.Owner), ChatId: chat.ChatId, Owner: true, Role: parse.Role, DateCreated: time.Now(), DateUpdated: time.Now()})
+	models.DB.Create(&models.ChatMembers{UserId: int(chat.Owner), ChatId: chat.ChatId, Owner: true, Role: parse.Role, DateCreated: time.Now().UTC().Format(os.Getenv("DATE_FORMAT")), DateUpdated: time.Now().UTC().Format(os.Getenv("DATE_FORMAT"))})
 	consumers.SendJSON(models.RMQMessage{SessionLost: false, ChatId: chat.ChatId, ChatDeleted: false, ChatCreated: true})
 
 	for i := 0; i < len(body.Members); i++ {
 		chatMembers.ChatId = chat.ChatId
 		chatMembers.Owner = false
-		chatMembers.DateCreated = time.Now()
-		chatMembers.DateUpdated = time.Now()
+		chatMembers.DateCreated, chatMembers.DateUpdated = time.Now().UTC().Format(os.Getenv("DATE_FORMAT")), time.Now().UTC().Format(os.Getenv("DATE_FORMAT"))
 		chatMembers.UserId = body.Members[i]
 		chatMembers.Role = checkUser.Role
 		models.DB.Model(&chatMembers).Create(&chatMembers)

@@ -20,5 +20,8 @@
   "members_has_duplicated": "Parameter 'members' has duplicates",
   "error_invite_member_to_chat": "Invite error users with ID: ",
   "owner_self_invite": "You can't invite yourself",
-  "chats_empty": "You are don't have chats"
+  "chats_empty": "You are don't have chats",
+  "invalid_message": "Invalid create message body.",
+  "send_message_error": "There was an error sending the message.",
+  "message_sent": "Message sent."
 }

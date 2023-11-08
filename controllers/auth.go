@@ -80,7 +80,7 @@ func Login(c *gin.Context) {
 		panic(err.Error())
 	}
 
-	expirationTime := time.Now().Add(life)
+	expirationTime := time.Now().UTC().Add(life)
 
 	claims := &models.Claims{
 		Role: existingUser.Role,
@@ -143,6 +143,8 @@ func Signup(c *gin.Context) {
 		c.JSON(500, ErrorMsg(-1, language.Language("fail_generate_pass_hash")))
 		return
 	}
+
+	user.Created, user.Updated = time.Now().UTC().Format(os.Getenv("DATE_FORMAT")), time.Now().UTC().Format(os.Getenv("DATE_FORMAT"))
 
 	models.DB.Create(&user)
 

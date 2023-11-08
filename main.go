@@ -30,6 +30,11 @@ func main() {
 
 	routes.AuthRoutes(r)
 	routes.UserRoutes(r)
+	routes.ChatRoutes(r)
+	routes.MessageRoutes(r)
 
-	r.Run(":8080")
+	err = r.Run(":8080")
+	if err != nil {
+		panic(err)
+	}
 }

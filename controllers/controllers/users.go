@@ -6,6 +6,8 @@ import (
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
 	"github.com/gin-gonic/gin"
+	"os"
+	"time"
 )
 
 func ResetPassword(c *gin.Context) {
@@ -16,7 +18,7 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	email, err := utils.ParseToken(claims)
+	number, err := utils.ParseToken(claims)
 	if err != nil {
 		c.JSON(403, ErrorMsg(-1, err.Error()))
 		return
@@ -31,7 +33,12 @@ func ResetPassword(c *gin.Context) {
 
 	var usr models.User
 
-	_ = models.DB.Model(&models.User{}).Where("email = ?", email.Subject).First(&usr)
+	_ = models.DB.Model(&models.User{}).Where("number = ?", number.Subject).First(&usr)
+
+	if usr.ID == 0 {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
 
 	newPass, err := utils.GenerateHashPassword(reset.NewPassword)
 	if err != nil {
@@ -54,8 +61,7 @@ func ResetPassword(c *gin.Context) {
 		c.JSON(400, ErrorMsg(15, language.Language("same_passwords")))
 		return
 	}
-
-	models.DB.Model(&models.User{}).Where("email = ?", email.Subject).Update("password", newPass)
+	models.DB.Model(&models.User{}).Where("number = ?", number.Subject).Update("password", newPass).Update("updated", time.Now().UTC().Format(os.Getenv("DATE_FORMAT")))
 	c.JSON(200, gin.H{
 		"success": true,
 		"message": language.Language("success_reset_pass"),
@@ -78,15 +84,20 @@ func UserInfo(c *gin.Context) {
 		return
 	}
 
-	models.DB.Model(&models.User{}).Where("email = ?", claims.Subject).First(&user)
+	models.DB.Model(&models.User{}).Where("number = ?", claims.Subject).First(&user)
+
+	if user.ID == 0 {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
 
 	c.JSON(200, gin.H{
-		"id":     user.ID,
-		"name":   user.Name,
-		"email":  user.Email,
-		"number": "+" + user.Number,
-		"create": user.CreatedAt,
-		"update": user.UpdatedAt,
+		"id":      user.ID,
+		"name":    user.Name,
+		"email":   user.Email,
+		"number":  "+" + user.Number,
+		"created": user.Created,
+		"updated": user.Updated,
 	})
 
 	consumers.SendJSON(models.RMQMessage{

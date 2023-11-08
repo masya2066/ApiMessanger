@@ -6,3 +6,4 @@ DB_NAME: test
 DB_SSLMODE: disable
 LANGUAGE: en / ru
 SECRET: AnyValue (Example: adjaijdad)
+TOKEN_LIFE_TIME: 86400s

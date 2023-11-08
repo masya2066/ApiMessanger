@@ -31,9 +31,14 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	if num := utils.CheckDigits(user.Number); num != true {
+		c.JSON(400, ErrorMsg(4, language.Language("invalid_number")))
+		return
+	}
+
 	var existingUser models.User
 
-	models.DB.Where("email = ?", user.Email).First(&existingUser)
+	models.DB.Where("number = ?", user.Number).First(&existingUser)
 
 	if existingUser.ID == 0 {
 		c.JSON(400, ErrorMsg(13, language.Language("user_not_exist")))
@@ -49,7 +54,7 @@ func Login(c *gin.Context) {
 
 	var userInfo models.CreatedUser
 
-	result := models.DB.Where("email = ?", user.Email).First(&user)
+	result := models.DB.Where("number = ?", user.Number).First(&user)
 	if result.Error != nil {
 		fmt.Println(result.Error)
 		return
@@ -58,6 +63,7 @@ func Login(c *gin.Context) {
 	jsonData, err := json.Marshal(user)
 	if err != nil {
 		fmt.Println("JSON marshaling error:", err)
+		return
 	}
 
 	bytes := []byte(jsonData)
@@ -74,12 +80,12 @@ func Login(c *gin.Context) {
 		panic(err.Error())
 	}
 
-	expirationTime := time.Now().Add(life)
+	expirationTime := time.Now().UTC().Add(life)
 
 	claims := &models.Claims{
 		Role: existingUser.Role,
 		StandardClaims: jwt.StandardClaims{
-			Subject:   existingUser.Email,
+			Subject:   existingUser.Number,
 			ExpiresAt: expirationTime.Unix(),
 		},
 	}
@@ -110,20 +116,20 @@ func Signup(c *gin.Context) {
 
 	user.Role = "user"
 
-	if user.Name == "" || user.Email == "" || user.Password == "" {
+	if user.Name == "" || user.Number == "" || user.Password == "" {
 		c.JSON(403, ErrorMsg(14, language.Language("invalid_reg_data")))
 		fmt.Println(&user)
 		return
 	}
 
-	if user.Number == "" {
-		c.JSON(403, ErrorMsg(15, "Number is empty"))
+	if num := utils.CheckDigits(user.Number); num != true {
+		c.JSON(400, ErrorMsg(4, language.Language("invalid_number")))
 		return
 	}
 
 	var existingUser models.User
 
-	models.DB.Where("email = ?", user.Email).First(&existingUser)
+	models.DB.Where("number = ?", user.Number).First(&existingUser)
 
 	if existingUser.ID != 0 {
 		c.JSON(400, ErrorMsg(12, language.Language("account_already_exist")))
@@ -137,6 +143,8 @@ func Signup(c *gin.Context) {
 		c.JSON(500, ErrorMsg(-1, language.Language("fail_generate_pass_hash")))
 		return
 	}
+
+	user.Created, user.Updated = time.Now().UTC().Format(os.Getenv("DATE_FORMAT")), time.Now().UTC().Format(os.Getenv("DATE_FORMAT"))
 
 	models.DB.Create(&user)
 

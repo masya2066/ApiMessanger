@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"ApiMessenger/controllers"
+	"ApiMessenger/controllers/controllers"
 	"github.com/gin-gonic/gin"
 )
 

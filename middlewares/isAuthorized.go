@@ -1,6 +1,8 @@
 package middlewares
 
 import (
+	"ApiMessenger/controllers/controllers"
+	"ApiMessenger/language"
 	"ApiMessenger/utils"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +13,7 @@ func IsAuthorized() gin.HandlerFunc {
 		cookie, err := c.Cookie("token")
 
 		if err != nil {
-			c.JSON(401, gin.H{"error": "unauthorized"})
+			c.JSON(401, controllers.ErrorMsg(11, language.Language("invalid_login")))
 			c.Abort()
 			return
 		}
@@ -19,7 +21,7 @@ func IsAuthorized() gin.HandlerFunc {
 		claims, err := utils.ParseToken(cookie)
 
 		if err != nil {
-			c.JSON(401, gin.H{"error": "unauthorized"})
+			c.JSON(401, controllers.ErrorMsg(11, language.Language("invalid_login")))
 			c.Abort()
 			return
 		}

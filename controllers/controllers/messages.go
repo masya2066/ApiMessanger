@@ -81,3 +81,46 @@ func NewMessage(c *gin.Context) {
 		return
 	}
 }
+
+func DeleteMessages(c *gin.Context) {
+	cookie, err := c.Cookie("token")
+	if err != nil {
+		c.JSON(403, ErrorMsg(-1, err.Error()))
+		return
+	}
+
+	if cookie == "" {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
+	parse, err := utils.ParseToken(cookie)
+
+	var user models.User
+
+	models.DB.Model(&models.User{}).Where("number = ?", parse.Subject).First(&user)
+
+	if user.ID == 0 {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
+	var body models.DeletingMessage
+	var message models.Message
+	var chat models.Chat
+
+	_ = c.ShouldBindJSON(&body)
+
+	models.DB.Model(&chat).Where("chat_id = ?", body.ChatId).First(&chat)
+
+	if chat.ID == 0 {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
+	if users := models.UsersOfChat(body.ChatId); len(users) == 0 {
+		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+		return
+	}
+
+}

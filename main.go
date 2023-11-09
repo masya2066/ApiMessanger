@@ -33,7 +33,7 @@ func main() {
 	routes.ChatRoutes(r)
 	routes.MessageRoutes(r)
 
-	err = r.Run(":8080")
+	err = r.Run(":" + os.Getenv("APP_PORT"))
 	if err != nil {
 		panic(err)
 	}

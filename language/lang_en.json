@@ -23,5 +23,6 @@
   "chats_empty": "You are don't have chats",
   "invalid_message": "Invalid create message body.",
   "send_message_error": "There was an error sending the message.",
-  "message_sent": "Message sent."
+  "message_sent": "Message sent.",
+  "incorrect_number": "Incorrect number"
 }

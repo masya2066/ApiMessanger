@@ -106,6 +106,54 @@ func Login(c *gin.Context) {
 	})
 }
 
+func Verification(c *gin.Context) {
+	//cookie, err := c.Cookie("token")
+	//
+	//if err != nil {
+	//	c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+	//	return
+	//}
+	//
+	//if cookie == "" {
+	//	c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+	//	return
+	//}
+	//
+	//parse, err := utils.ParseToken(cookie)
+	//
+	//if err != nil {
+	//	c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
+	//	return
+	//}
+
+	var body models.SmsBody
+
+	_ = c.ShouldBindJSON(&body)
+
+	if body.Number == "" {
+		c.JSON(400, ErrorMsg(40, language.Language("incorrect_number")))
+		return
+	}
+
+	access := models.CheckAccessToSendSms(body.Number)
+
+	if access == false {
+		c.JSON(400, ErrorMsg(41, "Pls, wait"))
+		return
+	}
+
+	models.DB.Create(models.SmsCode{
+		Number:   body.Number,
+		Code:     1234,
+		Sent:     true,
+		Attempts: 0,
+		SentTime: time.Now().UTC().Format(os.Getenv("DATE_FORMAT")),
+		Created:  time.Now().UTC().Format(os.Getenv("DATE_FORMAT")),
+	})
+
+	c.JSON(200, gin.H{"access": access})
+}
+
 func Signup(c *gin.Context) {
 	var user models.User
 

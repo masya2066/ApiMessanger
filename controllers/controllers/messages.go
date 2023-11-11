@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"ApiMessenger/language"
+	"ApiMessenger/middlewares"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
 	"github.com/gin-gonic/gin"
@@ -10,18 +11,12 @@ import (
 )
 
 func NewMessage(c *gin.Context) {
-	cookie, err := c.Cookie("token")
-	if err != nil {
-		c.JSON(403, ErrorMsg(-1, err.Error()))
-		return
-	}
+	isAuth, parse := middlewares.IsAuthorized(c)
 
-	if cookie == "" {
+	if !isAuth || parse.Subject == "" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
-
-	parse, err := utils.ParseToken(cookie)
 
 	var message models.Message
 	var user models.User
@@ -34,7 +29,7 @@ func NewMessage(c *gin.Context) {
 		return
 	}
 
-	err = c.ShouldBindJSON(&message)
+	_ = c.ShouldBindJSON(&message)
 	if message.Message == "" || message.ChatId == "" {
 		c.JSON(403, ErrorMsg(50, language.Language("invalid_message")))
 		return
@@ -83,18 +78,12 @@ func NewMessage(c *gin.Context) {
 }
 
 func DeleteMessages(c *gin.Context) {
-	cookie, err := c.Cookie("token")
-	if err != nil {
-		c.JSON(403, ErrorMsg(-1, err.Error()))
-		return
-	}
+	isAuth, parse := middlewares.IsAuthorized(c)
 
-	if cookie == "" {
+	if !isAuth || parse.Subject == "" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
-
-	parse, err := utils.ParseToken(cookie)
 
 	var user models.User
 

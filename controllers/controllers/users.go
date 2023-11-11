@@ -3,27 +3,22 @@ package controllers
 import (
 	"ApiMessenger/consumers"
 	"ApiMessenger/language"
+	"ApiMessenger/middlewares"
 	"ApiMessenger/models"
-	"ApiMessenger/utils"
 	"github.com/gin-gonic/gin"
 )
 
 func UserInfo(c *gin.Context) {
 	var user models.User
 
-	cookie, err := c.Cookie("token")
-	if err != nil {
+	isAuth, parse := middlewares.IsAuthorized(c)
+
+	if !isAuth || parse.Subject == "" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
 
-	claims, err := utils.ParseToken(cookie)
-	if err != nil {
-		c.JSON(403, ErrorMsg(-1, err.Error()))
-		return
-	}
-
-	models.DB.Model(&models.User{}).Where("number = ?", claims.Subject).First(&user)
+	models.DB.Model(&models.User{}).Where("number = ?", parse.Subject).First(&user)
 
 	if user.ID == 0 {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))

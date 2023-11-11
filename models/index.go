@@ -27,7 +27,7 @@ func InitDB(cfg Config) {
 		panic(err)
 	}
 
-	if err := db.AutoMigrate(&User{}, &Chat{}, &ChatMembers{}, &Message{}, &SmsCode{}, &EmailCode{}); err != nil {
+	if err := db.AutoMigrate(&User{}, &Chat{}, &ChatMembers{}, &Message{}, &SmsCode{}, &EmailCode{}, &UserToken{}); err != nil {
 		panic(err)
 	}
 

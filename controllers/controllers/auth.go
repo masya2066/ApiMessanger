@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"ApiMessenger/language"
+	"ApiMessenger/middlewares"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
 	"encoding/json"
@@ -151,7 +152,7 @@ func Verification(c *gin.Context) {
 		return
 	}
 
-	TokenLife := os.Getenv("TOKEN_LIFE_TIME")
+	TokenLife := os.Getenv("TOKEN_LIFE_TIME") + "s"
 
 	life, err := time.ParseDuration(TokenLife)
 	if err != nil {
@@ -180,9 +181,7 @@ func Verification(c *gin.Context) {
 
 	models.DB.Model(&user).Where("number = ?", body.Number).First(&user.Active)
 
-	fmt.Println("activate:", user.Active)
-
-	c.SetCookie("token", tokenString, int(expirationTime.Unix()), "/", "localhost", false, true)
+	models.DB.Create(&models.UserToken{Number: body.Number, Token: tokenString, Created: time.Now().UTC().Format(os.Getenv("DATE_FORMAT"))})
 
 	c.JSON(200, gin.H{
 		"success": true,
@@ -218,26 +217,19 @@ func Home(c *gin.Context) {
 
 func Prem(c *gin.Context) {
 
-	cookie, err := c.Cookie("token")
+	isAuth, parse := middlewares.IsAuthorized(c)
 
-	if err != nil {
+	if !isAuth || parse.Subject == "" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
 
-	claims, err := utils.ParseToken(cookie)
-
-	if err != nil {
+	if parse.Role != "admin" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
 
-	if claims.Role != "admin" {
-		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
-		return
-	}
-
-	c.JSON(200, gin.H{"success": "premium page", "role": claims.Role})
+	c.JSON(200, gin.H{"success": "premium page", "role": parse.Role})
 }
 
 func Logout(c *gin.Context) {

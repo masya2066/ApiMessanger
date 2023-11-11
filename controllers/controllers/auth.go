@@ -86,8 +86,6 @@ func Login(c *gin.Context) {
 		c.JSON(400, gin.H{"error": send.Error})
 		return
 	}
-
-	//c.SetCookie("token", tokenString, int(expirationTime.Unix()), "/", "localhost", false, true)
 	c.JSON(200, gin.H{
 		"user":     userInfo,
 		"sms_send": true,
@@ -146,8 +144,6 @@ func Verification(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(jsonData)
-
 	bytes := []byte(jsonData)
 	decodeError := json.Unmarshal(bytes, &user)
 	if decodeError != nil {
@@ -179,6 +175,14 @@ func Verification(c *gin.Context) {
 		c.JSON(500, ErrorMsg(-1, language.Language("fail_generate_token")))
 		return
 	}
+
+	models.DB.Model(&user).Where("number = ?", body.Number).Update("active", true)
+
+	models.DB.Model(&user).Where("number = ?", body.Number).First(&user.Active)
+
+	fmt.Println("activate:", user.Active)
+
+	c.SetCookie("token", tokenString, int(expirationTime.Unix()), "/", "localhost", false, true)
 
 	c.JSON(200, gin.H{
 		"success": true,

@@ -9,6 +9,7 @@ type User struct {
 	Created string `json:"created"`
 	Updated string `json:"updated"`
 	Deleted bool   `json:"deleted"`
+	Active  bool   `json:"active"`
 }
 
 type CreatedUser struct {

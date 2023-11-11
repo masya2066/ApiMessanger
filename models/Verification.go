@@ -24,28 +24,27 @@ type EmailCode struct {
 
 type SmsBody struct {
 	Number string `json:"number"`
+	Code   int    `json:"code"`
 }
 
-func AttemptSubmitSms(userId int, userCode int) int {
+func AttemptSubmitSms(number string, userCode int) (int, bool) {
 	var code SmsCode
-	DB.Model(&code).Where("user_id = ?", userId).First(&code)
+	DB.Model(&code).Where("number = ?", number).First(&code)
 
 	if code.Attempts >= 3 {
-		now := time.Now().UTC().Add(time.Second * -600).Format(os.Getenv("DATE_FORMAT"))
+		now := time.Now().UTC().Add(time.Second * -180).Format(os.Getenv("DATE_FORMAT"))
 		if now <= code.Created {
-			return 3
+			return 3, false
 		}
-		DB.Model(code).Where("user_id = ?", userId).Delete(code)
-		DB.Create(SmsCode{Code: userCode, Sent: true, Attempts: 1, Created: time.Now().UTC().Format(os.Getenv("DATE_FORMAT"))})
-
-		return 1
+		DB.Model(&code).Where("number = ?", number).Delete(&code)
+		DB.Create(SmsCode{Code: userCode, Sent: true, Attempts: 0, Created: time.Now().UTC().Format(os.Getenv("DATE_FORMAT"))})
 	}
 
 	if code.Code != userCode {
-		DB.Model(code).Where("user_id = ?", userId).Update("attempts", code.Attempts+1)
-		return code.Attempts + 1
+		DB.Model(code).Where("number = ?", number).Update("attempts", code.Attempts+1)
+		return code.Attempts + 1, false
 	}
-	return code.Attempts
+	return 0, true
 }
 
 func CheckAccessToSendSms(number string) bool {
@@ -57,7 +56,7 @@ func CheckAccessToSendSms(number string) bool {
 		if userSms.SentTime == "" {
 			panic("sent_time in empty")
 		}
-		now := time.Now().UTC().Add(time.Second * -180).Format(os.Getenv("DATE_FORMAT"))
+		now := time.Now().UTC().Add(time.Second * -600).Format(os.Getenv("DATE_FORMAT"))
 		if userSms.SentTime >= now {
 			return false
 		}

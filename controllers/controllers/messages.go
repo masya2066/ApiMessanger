@@ -106,7 +106,7 @@ func DeleteMessages(c *gin.Context) {
 	}
 
 	var body models.DeletingMessage
-	var message models.Message
+	//var message models.Message
 	var chat models.Chat
 
 	_ = c.ShouldBindJSON(&body)

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"os"
 	"time"
 )
@@ -60,10 +59,6 @@ func CheckAccessToSendSms(number string) bool {
 		if userSms.SentTime >= now {
 			return false
 		}
-
-		fmt.Println(now)
-		fmt.Println(userSms.SentTime)
-		fmt.Println(userSms.SentTime < now)
 		DB.Model(userSms).Where("number = ?", number).Delete(userSms)
 		return true
 	}

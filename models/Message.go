@@ -11,3 +11,8 @@ type Message struct {
 	Created   string `json:"created"` //os.Getenv("DATE_FORMAT")
 	Update    string `json:"update"`  //os.Getenv("DATE_FORMAT")
 }
+
+type DeletingMessage struct {
+	ChatId     string   `json:"chat_id"`
+	MessagesId []string `json:"messages_id"`
+}

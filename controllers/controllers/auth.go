@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"ApiMessenger/configs"
 	"ApiMessenger/language"
+	"ApiMessenger/middlewares"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
 	"encoding/json"
@@ -9,6 +11,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -40,16 +43,16 @@ func Login(c *gin.Context) {
 
 	models.DB.Where("number = ?", user.Number).First(&existingUser)
 
-	if existingUser.ID == 0 {
-		c.JSON(400, ErrorMsg(13, language.Language("user_not_exist")))
-		return
-	}
-
-	errHash := utils.CompareHashPassword(user.Password, existingUser.Password)
-
-	if !errHash {
-		c.JSON(400, ErrorMsg(14, language.Language("invalid_password")))
-		return
+	if existingUser.ID == 0 || existingUser.Number == "" {
+		models.DB.Model(&models.User{}).Create(&models.User{
+			Name:    user.Name,
+			Email:   user.Email,
+			Number:  user.Number,
+			Role:    "user",
+			Created: time.Now().UTC().Format(os.Getenv("DATE_FORMAT")),
+			Updated: time.Now().UTC().Format(os.Getenv("DATE_FORMAT")),
+			Deleted: false,
+		})
 	}
 
 	var userInfo models.CreatedUser
@@ -60,20 +63,99 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	models.DB.Model(&user).Where("number = ?", user.Number).First(&userInfo)
+
+	access := models.CheckAccessToSendSms(user.Number)
+
+	if access == false {
+		c.JSON(200, gin.H{
+			"user":     userInfo,
+			"sms_send": access,
+		})
+		return
+	}
+
+	send := models.DB.Create(models.SmsCode{
+		Number:   user.Number,
+		Code:     utils.GenerateVerify(),
+		Sent:     true,
+		Attempts: 0,
+		SentTime: time.Now().UTC().Format(os.Getenv("DATE_FORMAT")),
+		Created:  time.Now().UTC().Format(os.Getenv("DATE_FORMAT")),
+	})
+
+	if send.Error != nil {
+		c.JSON(400, gin.H{"error": send.Error})
+		return
+	}
+	c.JSON(200, gin.H{
+		"user":     userInfo,
+		"sms_send": true,
+	})
+}
+
+func Verification(c *gin.Context) {
+	var user models.User
+	var sms models.SmsCode
+	var body models.SmsBody
+
+	_ = c.ShouldBindJSON(&body)
+
+	models.DB.Model(&user).Where("number = ?", body.Number).First(&user)
+
+	if body.Number == "" || utils.CheckDigits(body.Number) == false {
+		c.JSON(400, ErrorMsg(52, language.Language("invalid_number")))
+		return
+	}
+
+	models.DB.Model(&models.SmsCode{}).Where("number = ?", user.Number).First(&sms)
+
+	if sms.Number == "" || sms.Created == "" {
+		c.JSON(400, ErrorMsg(57, language.Language("invalid_login")))
+		return
+	}
+
+	attemptsGet, _ := strconv.Atoi(configs.System("VERIFICATION_ATTEMPTS"))
+
+	count, verdict := models.AttemptSubmitSms(body.Number, body.Code, attemptsGet)
+
+	strToIntAttempts, err := strconv.Atoi(configs.System("VERIFICATION_ATTEMPTS"))
+	if err != nil {
+		panic(err)
+	}
+
+	attempts := strToIntAttempts - count
+
+	if !verdict {
+		if attempts < 0 {
+			c.JSON(400, ErrorMsg(56, language.Language("input_code_after")))
+			return
+		}
+		c.JSON(400, ErrorMsg(55, language.Language("incorrect_pin")+strconv.Itoa(attempts)))
+		return
+	}
+
+	remove := models.DB.Model(&sms).Where("number = ?", body.Number).Delete(&sms)
+	if remove.Error != nil {
+		panic(remove.Error)
+		return
+	}
+
 	jsonData, err := json.Marshal(user)
 	if err != nil {
 		fmt.Println("JSON marshaling error:", err)
+		panic(err)
 		return
 	}
 
 	bytes := []byte(jsonData)
-	decodeError := json.Unmarshal(bytes, &userInfo)
+	decodeError := json.Unmarshal(bytes, &user)
 	if decodeError != nil {
 		fmt.Println("JSON decoding error:", decodeError)
 		return
 	}
 
-	TokenLife := os.Getenv("TOKEN_LIFE_TIME")
+	TokenLife := configs.System("TOKEN_LIFE_TIME") + "s"
 
 	life, err := time.ParseDuration(TokenLife)
 	if err != nil {
@@ -83,9 +165,9 @@ func Login(c *gin.Context) {
 	expirationTime := time.Now().UTC().Add(life)
 
 	claims := &models.Claims{
-		Role: existingUser.Role,
+		Role: user.Role,
 		StandardClaims: jwt.StandardClaims{
-			Subject:   existingUser.Number,
+			Subject:   user.Number,
 			ExpiresAt: expirationTime.Unix(),
 		},
 	}
@@ -93,65 +175,23 @@ func Login(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	tokenString, err := token.SignedString(jwtKey)
-
 	if err != nil {
 		c.JSON(500, ErrorMsg(-1, language.Language("fail_generate_token")))
 		return
 	}
 
-	c.SetCookie("token", tokenString, int(expirationTime.Unix()), "/", "localhost", false, true)
-	c.JSON(200, gin.H{
-		"user":  userInfo,
-		"token": tokenString,
-	})
-}
+	models.DB.Model(&user).Where("number = ?", body.Number).Update("active", true)
 
-func Signup(c *gin.Context) {
-	var user models.User
+	models.DB.Model(&user).Where("number = ?", body.Number).First(&user.Active)
 
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(400, ErrorMsg(-1, err.Error()))
-		return
-	}
-
-	user.Role = "user"
-
-	if user.Name == "" || user.Number == "" || user.Password == "" {
-		c.JSON(403, ErrorMsg(14, language.Language("invalid_reg_data")))
-		fmt.Println(&user)
-		return
-	}
-
-	if num := utils.CheckDigits(user.Number); num != true {
-		c.JSON(400, ErrorMsg(4, language.Language("invalid_number")))
-		return
-	}
-
-	var existingUser models.User
-
-	models.DB.Where("number = ?", user.Number).First(&existingUser)
-
-	if existingUser.ID != 0 {
-		c.JSON(400, ErrorMsg(12, language.Language("account_already_exist")))
-		return
-	}
-
-	var errHash error
-	user.Password, errHash = utils.GenerateHashPassword(user.Password)
-
-	if errHash != nil {
-		c.JSON(500, ErrorMsg(-1, language.Language("fail_generate_pass_hash")))
-		return
-	}
-
-	user.Created, user.Updated = time.Now().UTC().Format(os.Getenv("DATE_FORMAT")), time.Now().UTC().Format(os.Getenv("DATE_FORMAT"))
-
-	models.DB.Create(&user)
+	models.DB.Create(&models.UserToken{Number: body.Number, Token: tokenString, Created: time.Now().UTC().Format(os.Getenv("DATE_FORMAT"))})
 
 	c.JSON(200, gin.H{
 		"success": true,
-		"message": language.Language("success_signup"),
+		"user":    user,
+		"token":   tokenString,
 	})
+
 }
 
 func Home(c *gin.Context) {
@@ -180,26 +220,19 @@ func Home(c *gin.Context) {
 
 func Prem(c *gin.Context) {
 
-	cookie, err := c.Cookie("token")
+	isAuth, parse := middlewares.IsAuthorized(c)
 
-	if err != nil {
+	if !isAuth || parse.Subject == "" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
 
-	claims, err := utils.ParseToken(cookie)
-
-	if err != nil {
+	if parse.Role != "admin" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
 
-	if claims.Role != "admin" {
-		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
-		return
-	}
-
-	c.JSON(200, gin.H{"success": "premium page", "role": claims.Role})
+	c.JSON(200, gin.H{"success": "premium page", "role": parse.Role})
 }
 
 func Logout(c *gin.Context) {

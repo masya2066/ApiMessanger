@@ -16,3 +16,10 @@ func GenerateId() string {
 
 	return id
 }
+
+func GenerateVerify() int {
+	code := rand.Intn(10000)
+	code = code % 10000
+
+	return code
+}

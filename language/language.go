@@ -1,7 +1,7 @@
 package language
 
 import (
-	"ApiMessenger/models"
+	"ApiMessenger/configs"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,7 +9,7 @@ import (
 
 func Language(key string) string {
 
-	lang := models.Language()
+	lang := configs.System("LANGUAGE")
 
 	var path string
 

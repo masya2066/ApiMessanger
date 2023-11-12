@@ -4,6 +4,7 @@ import (
 	"ApiMessenger/consumers"
 	"ApiMessenger/controllers"
 	"ApiMessenger/language"
+	"ApiMessenger/middlewares"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
 	"fmt"
@@ -21,20 +22,10 @@ func NewChat(c *gin.Context) {
 	var chat models.Chat
 	var user models.User
 
-	cookie, err := c.Cookie("token")
-	if err != nil {
-		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
-		return
-	}
+	isAuth, parse := middlewares.IsAuthorized(c)
 
-	if cookie == "" {
+	if !isAuth || parse.Subject == "" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
-		return
-	}
-
-	parse, err := utils.ParseToken(cookie)
-	if err != nil {
-		c.JSON(403, ErrorMsg(-1, err.Error()))
 		return
 	}
 
@@ -125,24 +116,14 @@ func DeleteChat(c *gin.Context) {
 	var chat models.Chat
 	var user models.User
 
-	cookie, err := c.Cookie("token")
-	if err != nil {
+	isAuth, parse := middlewares.IsAuthorized(c)
+
+	if !isAuth || parse.Subject == "" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
 		return
 	}
 
-	if cookie == "" {
-		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
-		return
-	}
-
-	parse, err := utils.ParseToken(cookie)
-	if err != nil {
-		c.JSON(403, ErrorMsg(-1, err.Error()))
-		return
-	}
-
-	err = c.ShouldBindJSON(&body)
+	_ = c.ShouldBindJSON(&body)
 	if body.ChatId == "" {
 		c.JSON(400, ErrorMsg(21, language.Language("invalid_chat_id")))
 		return
@@ -180,20 +161,10 @@ func ListChat(c *gin.Context) {
 	var user models.User
 	var chats []models.ChatMembers
 
-	cookie, err := c.Cookie("token")
-	if err != nil {
-		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
-		return
-	}
+	isAuth, parse := middlewares.IsAuthorized(c)
 
-	if cookie == "" {
+	if !isAuth || parse.Subject == "" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
-		return
-	}
-
-	parse, err := utils.ParseToken(cookie)
-	if err != nil {
-		c.JSON(403, ErrorMsg(-1, err.Error()))
 		return
 	}
 
@@ -247,20 +218,10 @@ func ListChat(c *gin.Context) {
 }
 
 func ChatInfo(c *gin.Context) {
-	cookie, err := c.Cookie("token")
-	if err != nil {
-		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
-		return
-	}
+	isAuth, parse := middlewares.IsAuthorized(c)
 
-	if cookie == "" {
+	if !isAuth || parse.Subject == "" {
 		c.JSON(401, ErrorMsg(11, language.Language("invalid_login")))
-		return
-	}
-
-	parse, err := utils.ParseToken(cookie)
-	if err != nil {
-		c.JSON(403, ErrorMsg(-1, err.Error()))
 		return
 	}
 

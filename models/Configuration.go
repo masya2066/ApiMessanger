@@ -12,7 +12,7 @@ func InitDefaultConfiguration() {
 
 	if config.Value == "" || config.Param == "" {
 		DB.Model(&Configuration{}).Create(&Configuration{Param: "TOKEN_LIFE_TIME", Value: "86400", Active: 1})
-		DB.Model(&Configuration{}).Create(&Configuration{Param: "VERIFICATION_ATTEMPTS", Value: "1", Active: 1})
+		DB.Model(&Configuration{}).Create(&Configuration{Param: "VERIFICATION_ATTEMPTS", Value: "3", Active: 1})
 		DB.Model(&Configuration{}).Create(&Configuration{Param: "LANGUAGE", Value: "en", Active: 1})
 	}
 }

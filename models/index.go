@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"os"
 )
 
 type Config struct {
@@ -27,15 +26,13 @@ func InitDB(cfg Config) {
 		panic(err)
 	}
 
-	if err := db.AutoMigrate(&User{}, &Chat{}, &ChatMembers{}, &Message{}, &SmsCode{}, &EmailCode{}, &UserToken{}); err != nil {
+	if err := db.AutoMigrate(&User{}, &Chat{}, &ChatMembers{}, &Message{}, &SmsCode{}, &EmailCode{}, &UserToken{}, &Configuration{}); err != nil {
 		panic(err)
 	}
 
 	fmt.Println("Migrate database")
 
 	DB = db
-}
 
-func Language() string {
-	return os.Getenv("LANGUAGE")
+	InitDefaultConfiguration()
 }

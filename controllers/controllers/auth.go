@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"ApiMessenger/configs"
 	"ApiMessenger/language"
 	"ApiMessenger/middlewares"
 	"ApiMessenger/models"
@@ -114,9 +115,11 @@ func Verification(c *gin.Context) {
 		return
 	}
 
-	count, verdict := models.AttemptSubmitSms(body.Number, body.Code)
+	attemptsGet, _ := strconv.Atoi(configs.System("VERIFICATION_ATTEMPTS"))
 
-	strToIntAttempts, err := strconv.Atoi(os.Getenv("VERIFICATION_ATTEMPTS"))
+	count, verdict := models.AttemptSubmitSms(body.Number, body.Code, attemptsGet)
+
+	strToIntAttempts, err := strconv.Atoi(configs.System("VERIFICATION_ATTEMPTS"))
 	if err != nil {
 		panic(err)
 	}
@@ -124,7 +127,7 @@ func Verification(c *gin.Context) {
 	attempts := strToIntAttempts - count
 
 	if !verdict {
-		if attempts == 0 {
+		if attempts < 0 {
 			c.JSON(400, ErrorMsg(56, language.Language("input_code_after")))
 			return
 		}
@@ -152,7 +155,7 @@ func Verification(c *gin.Context) {
 		return
 	}
 
-	TokenLife := os.Getenv("TOKEN_LIFE_TIME") + "s"
+	TokenLife := configs.System("TOKEN_LIFE_TIME") + "s"
 
 	life, err := time.ParseDuration(TokenLife)
 	if err != nil {

@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"ApiMessenger/configs"
 	"ApiMessenger/models"
 	"ApiMessenger/utils"
 	"github.com/gin-gonic/gin"
@@ -29,7 +30,7 @@ func IsAuthorized(c *gin.Context) (bool, *models.Claims) {
 
 	models.DB.Model(&token).Where("token = ?", header).First(&token)
 
-	lifeTime, err := strconv.Atoi(os.Getenv("TOKEN_LIFE_TIME"))
+	lifeTime, err := strconv.Atoi(configs.System("TOKEN_LIFE_TIME"))
 	if err != nil {
 		log.Fatal("Error token life time:", err)
 	}

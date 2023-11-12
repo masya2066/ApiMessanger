@@ -26,11 +26,11 @@ type SmsBody struct {
 	Code   int    `json:"code"`
 }
 
-func AttemptSubmitSms(number string, userCode int) (int, bool) {
+func AttemptSubmitSms(number string, userCode int, maxAttempts int) (int, bool) {
 	var code SmsCode
 	DB.Model(&code).Where("number = ?", number).First(&code)
 
-	if code.Attempts >= 3 {
+	if code.Attempts >= maxAttempts {
 		now := time.Now().UTC().Add(time.Second * -180).Format(os.Getenv("DATE_FORMAT"))
 		if now <= code.Created {
 			return 3, false
